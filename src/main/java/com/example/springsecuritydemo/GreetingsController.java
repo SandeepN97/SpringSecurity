@@ -17,6 +17,7 @@ public class GreetingsController {
         return "hello user";
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin")
     public String adminEndPoint() {
         return "hello admin";
