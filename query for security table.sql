@@ -12,6 +12,3 @@ CREATE TABLE springsecuritydemo.authorities (
 
 
 CREATE UNIQUE INDEX ix_auth_username ON springsecuritydemo.authorities (username, authority);
-
-
-

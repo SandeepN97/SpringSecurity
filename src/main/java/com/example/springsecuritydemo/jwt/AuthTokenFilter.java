@@ -30,7 +30,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        logger.debug("AuthToken Filter called for URI : {}", request.getRequestURI());
         try {
             String jwt = parseJwt(request);
             if (jwt != null && jwtUtils.validateToken(jwt)) {
@@ -44,15 +43,16 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 logger.debug("Roles form JWT: {}", userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            } else {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
             }
-        }catch (Exception e){
-            logger.error("Cannot set user authentication: {}", e);
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+        } catch (Exception e) {
+            logger.error("Cannot set user authentication: {}", e.getMessage());
+            if (!response.isCommitted()) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Error :Unauthorized");
+            }
+        }finally {
+            filterChain.doFilter(request, response);
         }
-        filterChain.doFilter(request, response);
+
     }
 
     private String parseJwt(HttpServletRequest request) {
