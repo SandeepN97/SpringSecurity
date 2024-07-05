@@ -12,6 +12,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
@@ -31,24 +33,24 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests((request) ->
-               request.requestMatchers("/h2-console/**").permitAll().anyRequest().authenticated());
+                request.requestMatchers("/h2-console/**").permitAll().anyRequest().authenticated());
         http.sessionManagement((session
                 -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)));
         //http.formLogin(withDefaults());
         http.httpBasic(withDefaults());
-        http.headers(headers-> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
+        http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }
 
     @Bean
     public UserDetailsService userDetailsService() {
-        UserDetails user1 = User.withUsername("user1")
-                .password("{noop}user1")
+        UserDetails user1 = User.withUsername("user2")
+                .password(passwordEncoder().encode("user"))
                 .roles("USER")
                 .build();
-        UserDetails admin = User.withUsername("admin")
-                .password("{noop}admin")
+        UserDetails admin = User.withUsername("admin1")
+                .password(passwordEncoder().encode("admin"))
                 .roles("ADMIN")
                 .build();
 
@@ -56,6 +58,11 @@ public class SecurityConfig {
         userDetailsManager.createUser(user1);
         userDetailsManager.createUser(admin);
         return userDetailsManager;
-       // return new InMemoryUserDetailsManager(user1, admin);
+        // return new InMemoryUserDetailsManager(user1, admin);
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
