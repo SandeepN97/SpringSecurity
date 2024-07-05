@@ -4,6 +4,7 @@ import com.example.springsecuritydemo.jwt.AuthEntrypointJwt;
 import com.example.springsecuritydemo.jwt.AuthTokenFilter;
 import jakarta.servlet.Filter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -45,7 +46,6 @@ public class SecurityConfig {
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests((authorizeRequests) ->
                 authorizeRequests
-                        .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/signin").permitAll()
                         .anyRequest().authenticated());
         http.sessionManagement((session
@@ -62,20 +62,29 @@ public class SecurityConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        UserDetails user1 = User.withUsername("user2")
-                .password(passwordEncoder().encode("user"))
-                .roles("USER")
-                .build();
-        UserDetails admin = User.withUsername("admin1")
-                .password(passwordEncoder().encode("admin"))
-                .roles("ADMIN")
-                .build();
-
-        JdbcUserDetailsManager userDetailsManager = new JdbcUserDetailsManager(dataSource);
-        userDetailsManager.createUser(user1);
-        userDetailsManager.createUser(admin);
-        return userDetailsManager;
+        return new JdbcUserDetailsManager(dataSource);
         // return new InMemoryUserDetailsManager(user1, admin);
+    }
+
+    @Bean
+    public CommandLineRunner initData(UserDetailsService userDetailsService) {
+        return args -> {
+            JdbcUserDetailsManager userDetailsManager = new JdbcUserDetailsManager(dataSource);
+            if (!userDetailsManager.userExists("user")) {
+                UserDetails user = User.withUsername("user")
+                        .password(passwordEncoder().encode("user"))
+                        .roles("USER")
+                        .build();
+                userDetailsManager.createUser(user);
+            }
+            if (!userDetailsManager.userExists("admin")) {
+                UserDetails admin = User.withUsername("admin")
+                        .password(passwordEncoder().encode("admin"))
+                        .roles("ADMIN")
+                        .build();
+                userDetailsManager.createUser(admin);
+            }
+        };
     }
 
     @Bean
